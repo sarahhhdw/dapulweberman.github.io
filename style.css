@@ -1,0 +1,75 @@
+@font-face {
+    font-family: "NexaLight";
+    src: url("NexaLight.otf");
+}
+
+@font-face {
+    font-family: "NexaBold";
+    src: url("NexaBold.otf");
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	color: #333;
+	font-family: "NexaLight";
+}
+
+.navbar {
+	background-color: #333;
+	color: #f0f0f0;
+	padding: 15px;
+	position: fixed;
+	width: 100%;
+}
+
+.navbar a {
+	color: #f0f0f0;
+	letter-spacing: 1.5;
+}
+
+.item {
+	margin-right: 60px;
+}
+
+.header {
+	background-color: #F0F0F0;
+	font-family: "NexaBold";
+	font-size: 50px;
+	text-align: center;
+	letter-spacing: 10px;
+	padding: 120px 0 70px;
+}
+
+.section {
+	margin: auto;
+	padding: 35px;
+	width: 60%;
+}
+
+.footer {
+	position: absolute;
+	bottom: 20px;
+	text-align: center;
+	width: 100%;
+}
+
+img, .right {
+	float: left;
+}
+
+.right {
+	padding: 25px;
+	width: 50%;
+	letter-spacing: .8px;
+	line-height: 25px;
+	text-align: justify;
+}
+
+.section {
+	font-family: sans-serif;
+}
+
+.blueColor {
+	color: #61D2D6;
+}
