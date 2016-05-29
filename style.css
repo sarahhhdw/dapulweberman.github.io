@@ -41,25 +41,21 @@ body {
 	padding: 120px 0 70px;
 }
 
-.section {
-	padding: 35px 70px;
-	font-family: sans-serif;
-	letter-spacing: .8px;
-	margin: auto;
+img {
+	margin-top: 35px;
 }
 
 .footer {
-	padding-top: 30px;
+	padding-top: 15px;
 	text-align: center;
 	font-size: 12px;
 }
 
-img, .text {
-	float: left;
-}
 .text {
-	padding: 25px;
+	font-family: sans-serif;
 	letter-spacing: .8px;
+	text-align: center;
+	padding: 25px;
 	line-height: 25px;
 	max-width: 500px;
 }
