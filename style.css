@@ -42,32 +42,26 @@ body {
 }
 
 .section {
+	padding: 35px 70px;
+	font-family: sans-serif;
+	letter-spacing: .8px;
 	margin: auto;
-	padding: 35px;
-	width: 60%;
 }
 
 .footer {
-	position: absolute;
-	bottom: 20px;
+	padding-top: 30px;
 	text-align: center;
-	width: 100%;
+	font-size: 12px;
 }
 
-img, .right {
+img, .text {
 	float: left;
 }
-
-.right {
+.text {
 	padding: 25px;
-	width: 50%;
 	letter-spacing: .8px;
 	line-height: 25px;
-	text-align: justify;
-}
-
-.section {
-	font-family: sans-serif;
+	max-width: 500px;
 }
 
 .blueColor {
