@@ -1,0 +1,116 @@
+<head>
+<title>website of sarah dapul-weberman: transpilers</title>
+<meta name="p:domain_verify" content="a60527a6eb2c34d85ef75c2ec9062943"/>
+<style>
+ body {
+ 	padding: 50px;
+ }
+</style>
+</head>
+
+<h1>Code Writing Code: Building a Python to JavaScript Transpiler<h1>
+
+<h3><i>This post was written while I was a software engineer at Pinterest in 2016.</i></h3>
+
+<p>You may have seen our <a href="https://medium.com/@Pinterest_Engineering/migrating-pinterest-profiles-to-react-479f4f7306aa" target="_blank">recent</a> <a href="https://medium.com/@Pinterest_Engineering/how-we-switched-our-template-rendering-engine-to-react-a799a3d540b0" target="_blank">blog posts</a> on switching out our template rendering engine and moving our web codebase to React. These projects have been part of a larger effort to have all web code at Pinterest written and run in a single language (JavaScript) on the server and client. This meant converting some server code from Python to JavaScript.</p>
+
+<p>Migrating or rewriting code is a tedious process. It's not glamorous or sexy, no one wants to do it, and can often introduce new bugs to the codebase. It's hard to justify spending time doing so, if the work must be done by hand. If an engineer was stuck with the job of rewriting code into a different language, they might get bored, complain, or quit. You know who does not get bored, complain, or quit? A computer program. A computer program is happy to perform such tasks and does so with minimal complaint. This kind of language-translating program is called a transpiler. Instead of rewriting code myself I decided to build a Python-to-JavaScript transpiler.</p>
+
+ <p>A transpiler is a type of compiler that takes code of one programming language and produces equivalent code in another programming language. Traditionally, compilers have translated code from high-level programming languages to lower-level ones, but transpilers are used to generate code between languages with similar levels of abstraction. Recently, transpilers have gained popularity in the JavaScript community, with languages like TypeScript and CoffeeScript being transpiled to JavaScript, and ES6 JavaScript being transpiled down to ES5 in the popular Babel transpiler. </p>
+
+<p>The area of the codebase I targeted with the transpiler is called the resource layer. At Pinterest, the resource layer is a lightweight server-side wrapper around API calls that may modify or reformat the data before sending the data to the client. Resource files generally all have the same structure and not much complexity. Thus, they were perfect for translating into JavaScript via transpiler. </p>
+
+<p>During the transition, we wanted to rewrite parts of our framework without stopping product developers from continuing to build product. Having the transpiler was helpful because it meant that the migration process, instead of writing new resource code in both languages, developers could make changes to the old Python file and could run the transpiler over the changed file to have the changes reflected in a new JavaScript file. Then, when we were ready to switch over, we could just delete the old Python files and have developers work in the transpiled file. </p>
+
+<p>So onto the good stuff: how does a transpiler work and how did we build one? In summary, the transpiler worked like this:</p>
+
+<ol>
+<li>Input: name of Python file. Read Python file into a string or buffer data structure, and run the string through an AST parser. For ease, I represented this AST in JSON using <a href="https://pypi.org/project/ast2json/" target="_blank">ast2json.</a></li>
+<li>Read in JSON into the transpiler. I chose to write the actual transpiler implementation in JavaScript, since it seemed like a further insult to Python to use Python to write JavaScript.</li>
+<li>The transpiler goes through each block of code as represented as an Abstract Syntax Tree in JSON. Each line of code can be represented as its own subtree. 
+</li><li>The transpiler is a program that looks at the different node types, and based on the Node type, returns the JavaScript syntax that would adequately represent that node in JavaScript. Most nodes contain other nodes, for example, a function Node might contain parameter nodes, or an If-else-if-else statement node would contain two if clauses that must be translated into some kind of BooleanLogic node, and the boolean logic node might have another function node in them for evaluation (See examples below).</li>
+<li>Further processing is done on the generated code, for example, running js-beautify to properly indent and space the code, or a code-mod to fix eslint errors.
+</li><li>The string of generated code is then written to an output JavaScript file.
+</li>
+</ol>
+<p>Congrats! Forget being a 10x coder, you are now a 1000x coder. You can now generate thousands of lines of new code every minute.</p>
+
+
+<h2>Abstract Syntax Trees </h2>
+
+The hardest part about building the transpiler is understanding the Abstract Syntax Tree, which represents the structure of the code itself. From Wikipedia: 
+
+<blockquote>In computer science, an abstract syntax tree (AST), or just syntax tree, is a tree representation of the abstract syntactic structure of source code written in a programming language. Each node of the tree denotes a construct occurring in the source code.</blockquote>
+
+<p>Different features of a language can be represented by different types of Nodes. Here's an example. </p>
+
+<img src="first.png"/>
+
+<p>In the first line, we have a <b>IfStatement</b> Node, and within the <b>IfStatement</b> we have a function (or <b>CallExpression</b>). The <b>CallExpression</b> (<code>purple</code>) is a function with a single argument: A <b>Literal</b> (<code>`foo`</code>). Thus, on the right, we see this represented in a tree structure, where the <b>IfStatement</b> has a <b>Test</b> node that is represented by our <b>CallExpression</b> node, and our <b>CallExpression</b> has both an identifier (the function name, <code>purple</code>) and an array of arguments (in this case, just one- a <b>Literal</b> with the value <code>`foo`</code>). </p>
+
+<img src="second.png"/>
+
+<p>Here it is represented in a more tree-like structure. Note that the <b>IfStatement</b> has both a <b>Test</b> node and a <b>Consequent</b> node (<code>bar = baz || boo;</code>). Expanding the <b>Consequent</b> Node we get: 
+</p>
+
+<img src="third.png"/>
+
+<br><br>
+
+Where the line <br><br>
+
+<code>bar = baz || boo;</code>
+
+<br><br>
+
+Can be represented by an <b>AssignmentExpression</b> node (assigning the <b>Identifier</b> bar) with an equals operator, to the right-hand side of the equals: a <b>LogicalExpression</b> with the operator || that also has a left and right.
+
+<br><br>
+
+Once you are able to understand all lines of code and all programs as an abstract syntax tree, creating a transpiler is quite straightforward. You just need to write code that takes in every possible type of node and outputs code in the new language based on how the new language represents that structure. So for example, in python, a <b>LogicalExpression</b> might look like
+
+<br><br>
+
+<code>baz or boo</code>
+<br><br>
+
+But in JavaScript, it looks like
+<br><br>
+<code>baz || boo</code>
+<br><br>
+So, our code for the <b>LogicalExpression</b> node would look something like:
+<br><br>
+<code>
+function processNode(node) {<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;switch (node.type):<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;case `LogicalExpression`: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    if (operator === '||') {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	   // we know there's a left and a right node in a || expression.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	return processNode(node.left) + ' || ' + processNode(node.right);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    // Other types of operators go here ...<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;case 'Identifier': return node.name;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;case 'AssignmentExpression': return 'var ' + processNode(node.left) + ' = ' + processNode(node.right);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// other types of Nodes go here...<br>
+}
+</code><br><br>
+Repeat for all different node types. This is the fun part - figuring out how to translate from Python to JavaScript! This meant getting to know JavaScript/Python syntax intimately, as well as a lot of comparing standard libraries in JS/Python to see how they differed. I had to deal with the language quirks of JavaScript: falsey, none, null, undefined, as well as the differences in array iteration, variable scoping, and many other gotchas.
+<br><br>
+
+
+<h3>Benefits</h3>
+Unlike human-written code, the transpiler code was very consistent in the different types of bugs that would appear. This made it a lot easier to debug if anything was going wrong, because there were certain types of bugs that I knew to look out for. Also, if there was an issue in the transpiler generated code, I could fix the transpiler and then re-run it on all files to fix the bug in all files. It turns out that code written by computers is much less buggy than code written by humans. Who knew?
+
+
+<h3>Other Considerations</h3>
+
+<b><i>Computers can write code now? Am I eventually automating myself out of a job?</i></b><br>
+Probably, but I prefer to automate things rather than do them myself. I was also able to test the code using automation - specifically, shadow traffic, which I won't talk about here because it deserves a whole other blog post. [added later] I did speak about both in my talk at <a href="http://www.scaleconf.co.nz/2017/talks/SarahDapul-Weberman.html" target="_blank">ScaleConf NZ 2017. </a>
+
+<br><br>
+
+<b><i>Will I open source this?</i></b><br>
+I won't be open-sourcing at this time because it's highly specific to Pinterest Python code + Libraries. 
+
