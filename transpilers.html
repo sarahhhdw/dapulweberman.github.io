@@ -44,16 +44,16 @@ The hardest part about building the transpiler is understanding the Abstract Syn
 
 <p>Different features of a language can be represented by different types of Nodes. Here's an example. </p>
 
-<img src="first.png"/>
+<img src="transpilers/first.png"/>
 
 <p>In the first line, we have a <b>IfStatement</b> Node, and within the <b>IfStatement</b> we have a function (or <b>CallExpression</b>). The <b>CallExpression</b> (<code>purple</code>) is a function with a single argument: A <b>Literal</b> (<code>`foo`</code>). Thus, on the right, we see this represented in a tree structure, where the <b>IfStatement</b> has a <b>Test</b> node that is represented by our <b>CallExpression</b> node, and our <b>CallExpression</b> has both an identifier (the function name, <code>purple</code>) and an array of arguments (in this case, just one- a <b>Literal</b> with the value <code>`foo`</code>). </p>
 
-<img src="second.png"/>
+<img src="transpilers/second.png"/>
 
 <p>Here it is represented in a more tree-like structure. Note that the <b>IfStatement</b> has both a <b>Test</b> node and a <b>Consequent</b> node (<code>bar = baz || boo;</code>). Expanding the <b>Consequent</b> Node we get: 
 </p>
 
-<img src="third.png"/>
+<img src="transpilers/third.png"/>
 
 <br><br>
 
